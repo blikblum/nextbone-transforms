@@ -1,0 +1,15 @@
+{
+  "name": "nextbone-transforms",
+  "version": "0.1.0",
+  "main": "index.js",
+  "repository": "https://github.com/blikblum/nextbone-transforms.git",
+  "author": "Luiz Américo <luizamericop@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^23.6.0",
+    "jscodeshift": "^0.6.2"
+  },
+  "scripts": {
+    "test": "jest"
+  }
+}
