@@ -5,3 +5,4 @@ const defineTest = require('jscodeshift/dist/testUtils').defineTest;
 
 defineTest(__dirname, 'convert-base-classes', null, 'global');
 defineTest(__dirname, 'convert-base-classes', null, 'require-default');
+defineTest(__dirname, 'convert-base-classes', null, 'require-default-customname');
