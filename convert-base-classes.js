@@ -1,6 +1,7 @@
 const getPath = require('lodash/get')
+const each = require('lodash/each')
 
-const knownDecorators = ['validation']
+const knownDecorators = ['validation', 'computed']
 
 module.exports = function transformer(file, api) {
   const j = api.jscodeshift;
@@ -8,11 +9,29 @@ module.exports = function transformer(file, api) {
   const root = j(file.source)
 
   let bbIdentifier = 'Backbone'
+  const addImports = {}
 
   function buildClass(className, callExpression) {
     const bbClassName = getPath(callExpression, 'callee.object.property.name')
     const bbClassNameAST = j.memberExpression(j.identifier(bbIdentifier), j.identifier(bbClassName))
-    return j.classDeclaration(j.identifier(className), j.classBody([]), bbClassNameAST)
+    const decorators = []
+    if (callExpression.arguments.length) {
+      const options = callExpression.arguments[0]
+      options.properties.forEach(property => {
+        const propName = property.key.name
+        if (property.value.type === 'ObjectExpression') {
+          if (knownDecorators.indexOf(propName) !== -1) {
+            decorators.push(j.decorator(j.callExpression(j.identifier(propName), [property.value])))
+            if (!addImports[propName]) {
+              addImports[propName] = j.importDeclaration([j.importSpecifier(j.identifier(propName))], j.stringLiteral(`nextbone/${propName}`), 'value')
+            }            
+          }
+        }
+      })
+    }
+    const result = j.classDeclaration(j.identifier(className), j.classBody([]), bbClassNameAST)
+    result.decorators = decorators
+    return result
   }  
   
   // search backbone cjs/require import
@@ -62,6 +81,25 @@ module.exports = function transformer(file, api) {
         }
       }
     })
+  
+  // add imports
+  if (Object.keys(addImports).length) {
+    const importDeclarations = root.find(j.ImportDeclaration)
+    if (importDeclarations.length) {
+      const lastImport = importDeclarations.paths(importDeclarations.length - 1)
+      each(addImports, importAST => {
+        j(lastImport).insertAfter(importAST)
+      })
+    } else {
+      root
+        .find(j.Program)
+        .forEach(path => {
+          each(addImports, importAST => {
+            path.value.body.splice(0, 0, importAST)
+          })
+        })         
+    }
+  }
 
   return root.toSource();
 }
