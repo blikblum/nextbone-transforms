@@ -1,9 +1,7 @@
 class MyModel extends Backbone.Model {}
 
-class Sample extends SampleParent {
+var x = someObj.extend({})
 
-}
-
-var x = 'test'
+var x = someObj.Model.extend({})
 
 class MyCollection extends Backbone.Collection {}

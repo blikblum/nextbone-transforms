@@ -2,11 +2,9 @@ const MyModel = Backbone.Model.extend({
 
 })
 
-class Sample extends SampleParent {
+var x = someObj.extend({})
 
-}
-
-var x = 'test'
+var x = someObj.Model.extend({})
 
 const MyCollection = Backbone.Collection.extend({
   
