@@ -1,3 +1,5 @@
+const Backbone = require('backbone')
+
 const MyModel = Backbone.Model.extend({
 
 })

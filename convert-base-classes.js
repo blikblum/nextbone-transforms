@@ -1,26 +1,47 @@
+const getPath = require('lodash/get')
+
+function getBackboneClassName(declaration) {
+  const init = declaration.init
+  if (init.type === 'CallExpression' && init.callee.object.object.name === 'Backbone' && init.callee.property.name === 'extend') {
+    return init.callee.object.property.name
+  }
+}
+
 module.exports = function transformer(file, api) {
   const j = api.jscodeshift;
 
-  return j(file.source)
-    .find(j.VariableDeclaration)
-    .filter(path => {      
-      return path.value.declarations.some(declaration => {
-        const init = declaration.init
-        return init.type === 'CallExpression' && init.callee.object.object.name === 'Backbone' && init.callee.object.property.name === 'Model'
-         
-      })
-    }) 
+  const ast = j(file.source)
+  
+  // search backbone imports
+  ast
+    .find(j.CallExpression, {
+      callee: { name: 'require',  type: 'Identifier' },
+      arguments: [{ type: 'Literal', value: 'backbone' }]
+    })
     .forEach(path => {
-      path.dummy = 'xx'
-      path.value.declarations.forEach(declaration => {
-        const validation = declaration.init.arguments[0].properties.find(prop => prop.key.name === 'validation')
-        console.log(validation)
-      })      
+      j(path)
+        .find(j.Literal, { value: 'backbone' })
+        .replaceWith(j.literal('nextbone')) 
     })
-    .replaceWith(path => {
-      console.log(path.dummy)
-      const className = path.value.declarations[0].id.name;
-      return j.classDeclaration(j.identifier(className), j.classBody([]), j.identifier('Model'))
+
+  // search backbone classes
+  ast
+    .find(j.CallExpression, {
+      callee: { object: { object: { type: 'Identifier', name: 'Backbone' } }, property: { name: 'extend' }  }
     })
-    .toSource();
+    .forEach(path => {
+      let parent = path.parentPath
+      if (parent.value.type === 'VariableDeclarator') {
+        const className = parent.value.id.name;
+        parent = parent.parentPath.parentPath
+        if (parent.value.type === 'VariableDeclaration') {
+          const backboneClassName = getPath(path.value, 'callee.object.property.name')
+          const backboneClassNameAST = j.memberExpression(j.identifier('Backbone'), j.identifier(backboneClassName))
+          const classAST = j.classDeclaration(j.identifier(className), j.classBody([]), backboneClassNameAST)
+          j(parent).replaceWith(classAST)
+        }
+      }
+    })
+
+  return ast.toSource();
 }
