@@ -1,11 +1,19 @@
 const getPath = require('lodash/get')
 
+const knownDecorators = ['validation']
+
 module.exports = function transformer(file, api) {
   const j = api.jscodeshift;
 
   const root = j(file.source)
 
-  let backboneIdentifier = 'Backbone'
+  let bbIdentifier = 'Backbone'
+
+  function buildClass(className, callExpression) {
+    const bbClassName = getPath(callExpression, 'callee.object.property.name')
+    const bbClassNameAST = j.memberExpression(j.identifier(bbIdentifier), j.identifier(bbClassName))
+    return j.classDeclaration(j.identifier(className), j.classBody([]), bbClassNameAST)
+  }  
   
   // search backbone cjs/require import
   root
@@ -15,7 +23,7 @@ module.exports = function transformer(file, api) {
     })
     .forEach(path => {
       if (path.parentPath.value.type === 'VariableDeclarator') {
-        backboneIdentifier = path.parentPath.value.id.name
+        bbIdentifier = path.parentPath.value.id.name
       }
       j(path)
         .find(j.StringLiteral, { value: 'backbone' })
@@ -24,25 +32,25 @@ module.exports = function transformer(file, api) {
   
   // search backbone es import
   root
-  .find(j.ImportDeclaration, {    
-    source: { value: 'backbone' }
-  })
-  .forEach(path => {
-    path.value.specifiers.forEach(specifier => {
-      if (specifier.type === 'ImportDefaultSpecifier') {
-        backboneIdentifier = specifier.local.name
-      }      
-    })        
-    j(path)
-      .find(j.StringLiteral, { value: 'backbone' })
-      .replaceWith(j.stringLiteral('nextbone')) 
-  })
+    .find(j.ImportDeclaration, {    
+      source: { value: 'backbone' }
+    })
+    .forEach(path => {
+      path.value.specifiers.forEach(specifier => {
+        if (specifier.type === 'ImportDefaultSpecifier') {
+          bbIdentifier = specifier.local.name
+        }      
+      })        
+      j(path)
+        .find(j.StringLiteral, { value: 'backbone' })
+        .replaceWith(j.stringLiteral('nextbone')) 
+    })
 
 
   // search backbone classes
   root
     .find(j.CallExpression, {
-      callee: { object: { object: { type: 'Identifier', name: backboneIdentifier } }, property: { name: 'extend' }  }
+      callee: { object: { object: { type: 'Identifier', name: bbIdentifier } }, property: { name: 'extend' }  }
     })
     .forEach(path => {
       let parent = path.parentPath
@@ -50,10 +58,7 @@ module.exports = function transformer(file, api) {
         const className = parent.value.id.name;
         parent = parent.parentPath.parentPath
         if (parent.value.type === 'VariableDeclaration') {
-          const backboneClassName = getPath(path.value, 'callee.object.property.name')
-          const backboneClassNameAST = j.memberExpression(j.identifier(backboneIdentifier), j.identifier(backboneClassName))
-          const classAST = j.classDeclaration(j.identifier(className), j.classBody([]), backboneClassNameAST)
-          j(parent).replaceWith(classAST)
+          j(parent).replaceWith(buildClass(className, path.value))
         }
       }
     })
