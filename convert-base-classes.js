@@ -1,12 +1,5 @@
 const getPath = require('lodash/get')
 
-function getBackboneClassName(declaration) {
-  const init = declaration.init
-  if (init.type === 'CallExpression' && init.callee.object.object.name === 'Backbone' && init.callee.property.name === 'extend') {
-    return init.callee.object.property.name
-  }
-}
-
 module.exports = function transformer(file, api) {
   const j = api.jscodeshift;
 
