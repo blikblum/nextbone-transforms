@@ -9,12 +9,12 @@ module.exports = function transformer(file, api) {
   ast
     .find(j.CallExpression, {
       callee: { name: 'require',  type: 'Identifier' },
-      arguments: [{ type: 'Literal', value: 'backbone' }]
+      arguments: [{ type: 'StringLiteral', value: 'backbone' }]
     })
     .forEach(path => {
       j(path)
-        .find(j.Literal, { value: 'backbone' })
-        .replaceWith(j.literal('nextbone')) 
+        .find(j.StringLiteral, { value: 'backbone' })
+        .replaceWith(j.stringLiteral('nextbone')) 
     })
 
   // search backbone classes
@@ -38,3 +38,5 @@ module.exports = function transformer(file, api) {
 
   return ast.toSource();
 }
+
+module.exports.parser = 'babylon'
