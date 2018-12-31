@@ -7,7 +7,7 @@ module.exports = function transformer(file, api) {
 
   let backboneIdentifier = 'Backbone'
   
-  // search backbone imports
+  // search backbone cjs/require import
   root
     .find(j.CallExpression, {
       callee: { name: 'require',  type: 'Identifier' },
@@ -21,6 +21,23 @@ module.exports = function transformer(file, api) {
         .find(j.StringLiteral, { value: 'backbone' })
         .replaceWith(j.stringLiteral('nextbone')) 
     })
+  
+  // search backbone es import
+  root
+  .find(j.ImportDeclaration, {    
+    source: { value: 'backbone' }
+  })
+  .forEach(path => {
+    path.value.specifiers.forEach(specifier => {
+      if (specifier.type === 'ImportDefaultSpecifier') {
+        backboneIdentifier = specifier.local.name
+      }      
+    })        
+    j(path)
+      .find(j.StringLiteral, { value: 'backbone' })
+      .replaceWith(j.stringLiteral('nextbone')) 
+  })
+
 
   // search backbone classes
   root
