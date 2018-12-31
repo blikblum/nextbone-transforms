@@ -83,22 +83,21 @@ module.exports = function transformer(file, api) {
     })
   
   // add imports
-  if (Object.keys(addImports).length) {
-    const importDeclarations = root.find(j.ImportDeclaration)
-    if (importDeclarations.length) {
-      const lastImport = importDeclarations.paths(importDeclarations.length - 1)
-      each(addImports, importAST => {
-        j(lastImport).insertAfter(importAST)
+  if (Object.keys(addImports).length) {    
+    root
+      .find(j.Program)
+      .forEach(path => {
+        let importAddIndex = 0
+        path.value.body.forEach((item, index) => {
+          if (item.type === 'ImportDeclaration') {
+            importAddIndex = index + 1
+          }
+        })
+        each(addImports, (value) => {
+          path.value.body.splice(importAddIndex, 0, value)
+          importAddIndex++
+        })
       })
-    } else {
-      root
-        .find(j.Program)
-        .forEach(path => {
-          each(addImports, importAST => {
-            path.value.body.splice(0, 0, importAST)
-          })
-        })         
-    }
   }
 
   return root.toSource();

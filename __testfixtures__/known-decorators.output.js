@@ -1,7 +1,7 @@
 import Backbone from "nextbone"
 
-import { computed } from "nextbone/computed";
 import { validation } from "nextbone/validation";
+import { computed } from "nextbone/computed";
 
 @validation({
   name: {
