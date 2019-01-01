@@ -11,7 +11,7 @@ module.exports = function transformer(file, api) {
   let bbIdentifier = 'Backbone'
   const addImports = {}
 
-  function buildClass(className, callExpression) {
+  function buildClass(className, callExpression, isExpression) {
     const bbClassName = getPath(callExpression, 'callee.object.property.name')
     const bbClassNameAST = j.memberExpression(j.identifier(bbIdentifier), j.identifier(bbClassName))
     const decorators = []
@@ -29,7 +29,16 @@ module.exports = function transformer(file, api) {
         }
       })
     }
-    const result = j.classDeclaration(j.identifier(className), j.classBody([]), bbClassNameAST)
+    let nameIdentifier
+    let classType
+    if (isExpression) {
+      nameIdentifier = null
+      classType = 'classExpression'
+    } else {
+      nameIdentifier = j.identifier(className)
+      classType = 'classDeclaration'
+    }
+    const result = j[classType](nameIdentifier, j.classBody([]), bbClassNameAST)
     result.decorators = decorators
     return result
   }  
@@ -73,13 +82,20 @@ module.exports = function transformer(file, api) {
     })
     .forEach(path => {
       let parent = path.parentPath
-      if (parent.value.type === 'VariableDeclarator') {
-        const className = parent.value.id.name;
-        parent = parent.parentPath.parentPath
-        if (parent.value.type === 'VariableDeclaration') {
-          j(parent).replaceWith(buildClass(className, path.value))
-        }
+      switch (parent.value.type) {
+        case 'VariableDeclarator': 
+          const className = parent.value.id.name;
+          parent = parent.parentPath.parentPath
+          if (parent.value.type === 'VariableDeclaration') {
+            j(parent).replaceWith(buildClass(className, path.value))
+          }
+          break;
+        case 'AssignmentExpression':
+        case 'ExportDefaultDeclaration':
+          j(path).replaceWith(buildClass(null, path.value, true))
+          break;
       }
+      
     })
   
   // add imports
