@@ -19,7 +19,7 @@ module.exports = function transformer(file, api) {
       const options = callExpression.arguments[0]
       options.properties.forEach(property => {
         const propName = property.key.name
-        if (property.value.type === 'ObjectExpression') {
+        if (property.value && property.value.type === 'ObjectExpression') {
           if (knownDecorators.indexOf(propName) !== -1) {
             decorators.push(j.decorator(j.callExpression(j.identifier(propName), [property.value])))
             if (!addImports[propName]) {
