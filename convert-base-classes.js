@@ -2,7 +2,14 @@ const getPath = require('lodash/get')
 const each = require('lodash/each')
 
 const knownDecorators = ['validation', 'computed']
-const knownClasses = ['Model', 'Collection']
+const knownClasses = {
+  Model: {
+    static: ['cidPrefix', 'idAttribute']
+  },
+  Collection: {
+    static: ['model']
+  }
+}  
 
 module.exports = function transformer(file, api) {
   const j = api.jscodeshift;
@@ -13,8 +20,17 @@ module.exports = function transformer(file, api) {
   const classIdentifiers = []
   const addImports = {}
 
-  function buildClass(className, callExpression, baseClassNameAST, isExpression) {    
+  function createBaseClassName(baseClass) {
+    if (baseClass.namespace) {
+      return j.memberExpression(j.identifier(baseClass.namespace), j.identifier(baseClass.identifier))
+    }
+    return j.identifier(baseClass.identifier)
+  }
+
+  function buildClass(className, callExpression, baseClass, isExpression) {    
     const decorators = []
+    const body = []
+    const classInfo = knownClasses[baseClass.name]
     if (callExpression.arguments.length) {
       const options = callExpression.arguments[0]
       options.properties.forEach(property => {
@@ -24,8 +40,19 @@ module.exports = function transformer(file, api) {
             decorators.push(j.decorator(j.callExpression(j.identifier(propName), [property.value])))
             if (!addImports[propName]) {
               addImports[propName] = j.importDeclaration([j.importSpecifier(j.identifier(propName))], j.stringLiteral(`nextbone/${propName}`), 'value')
-            }            
+            }
+            return            
           }
+        }
+
+        if (property.type === 'ObjectProperty') {
+          if (property.value.type === 'FunctionExpression') {
+            body.push(j.classMethod('method', j.identifier(propName), property.value.params, property.value.body))
+          } else {
+            body.push(j.classProperty(j.identifier(propName), property.value, null, classInfo && classInfo.static.indexOf(propName) !== -1))
+          }          
+        } else if (property.type === 'ObjectMethod') {
+          body.push(j.classMethod('method', j.identifier(propName), property.params, property.body))
         }
       })
     }
@@ -38,24 +65,24 @@ module.exports = function transformer(file, api) {
       nameIdentifier = j.identifier(className)
       classType = 'classDeclaration'
     }
-    const result = j[classType](nameIdentifier, j.classBody([]), baseClassNameAST)
+    const result = j[classType](nameIdentifier, j.classBody(body), createBaseClassName(baseClass))
     result.decorators = decorators
     return result
   }
 
-  function parseCallExpression(path, baseClassNameAST) {
+  function parseCallExpression(path, baseClass) {
     let parent = path.parentPath
     switch (parent.value.type) {
       case 'VariableDeclarator': 
         const className = parent.value.id.name;
         parent = parent.parentPath.parentPath
         if (parent.value.type === 'VariableDeclaration') {
-          j(parent).replaceWith(buildClass(className, path.value, baseClassNameAST))
+          j(parent).replaceWith(buildClass(className, path.value, baseClass))
         }
         break;
       case 'AssignmentExpression':
       case 'ExportDefaultDeclaration':
-        j(path).replaceWith(buildClass(null, path.value, baseClassNameAST, true))
+        j(path).replaceWith(buildClass(null, path.value, baseClass, true))
         break;
     }
   }
@@ -85,8 +112,8 @@ module.exports = function transformer(file, api) {
         if (specifier.type === 'ImportDefaultSpecifier') {
           bbIdentifier = specifier.local.name
         } else {
-          if (knownClasses.indexOf(specifier.imported.name) !== -1) {
-            classIdentifiers.push(specifier.local.name)
+          if (specifier.imported.name in knownClasses) {
+            classIdentifiers.push({identifier: specifier.local.name, name: specifier.imported.name})
           }
         }
       })        
@@ -103,18 +130,16 @@ module.exports = function transformer(file, api) {
     })
     .forEach(path => {
       const baseClassName = getPath(path.value, 'callee.object.property.name')
-      const baseClassNameAST = j.memberExpression(j.identifier(bbIdentifier), j.identifier(baseClassName))
-      parseCallExpression(path, baseClassNameAST)
+      parseCallExpression(path, {name: baseClassName, identifier: baseClassName, namespace: bbIdentifier})
     })
 
-  classIdentifiers.forEach(baseClassName => {
+  classIdentifiers.forEach(baseClass => {
     root
     .find(j.CallExpression, {
-      callee: { object: { type: 'Identifier', name: baseClassName }, property: { name: 'extend' }  }
+      callee: { object: { type: 'Identifier', name: baseClass.identifier }, property: { name: 'extend' }  }
     })
     .forEach(path => {
-      const baseClassNameAST = j.identifier(baseClassName)
-      parseCallExpression(path, baseClassNameAST)
+      parseCallExpression(path, baseClass)
     })
   })  
   
