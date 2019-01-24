@@ -1,4 +1,4 @@
-import { Model, Collection as BBCollection } from "nextbone"
+import { Model, Collection as BBCollection, Router } from "nextbone"
 
 
 class MyModel extends Model {
@@ -24,5 +24,15 @@ class MyCollection extends BBCollection {
   options = {
     a: 'b'
   };
+}
+
+class MyRouter extends Router {
+  static routes = {
+    a: 'b'
+  };
+
+  b() {
+
+  }
 }
 

@@ -1,4 +1,4 @@
-import { Model, Collection as BBCollection } from 'backbone'
+import { Model, Collection as BBCollection, Router } from 'backbone'
 
 
 const MyModel = Model.extend({
@@ -20,5 +20,15 @@ const MyCollection = BBCollection.extend({
   model: MyModel,
   options: {
     a: 'b'
+  }
+})
+
+const MyRouter = Router.extend({
+  routes: {
+    a: 'b'
+  },
+
+  b: function() {
+
   }
 })

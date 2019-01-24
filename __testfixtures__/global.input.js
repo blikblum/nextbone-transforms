@@ -11,3 +11,7 @@ const MyCollection = Backbone.Collection.extend({
 })
 
 export const Test = Backbone.Model.extend({});
+
+const MyRouter = Backbone.Router.extend({
+  
+})

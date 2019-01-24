@@ -175,6 +175,9 @@ const backboneConfig = {
     },
     Collection: {
       static: ['model']
+    },
+    Router: {
+      static: ['routes']
     }
   },
   newModuleName: 'nextbone'
