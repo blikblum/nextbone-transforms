@@ -9,6 +9,10 @@ class MyModel extends Model {
     x: 'y'
   };
 
+  static defaults = {
+    a: 1
+  };
+
   aFunction(arg) {
     console.log(arg)
   }

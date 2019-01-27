@@ -7,6 +7,9 @@ const MyModel = Model.extend({
   anObject: {
     x: 'y'
   },
+  defaults: {
+    a: 1
+  },
   aFunction: function(arg) {
     console.log(arg)
   },

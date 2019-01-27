@@ -183,7 +183,7 @@ const backboneConfig = {
   knownDecorators: ['validation', 'computed'],
   knownClasses: {
     Model: {
-      static: ['cidPrefix', 'idAttribute']
+      static: ['cidPrefix', 'idAttribute', 'defaults']
     },
     Collection: {
       static: ['model']
