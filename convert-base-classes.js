@@ -166,6 +166,17 @@ function transformModule(moduleConfig, root, j) {
   }
 }
 
+function transformRadio (root, j) {
+  root
+    .find(j.ImportDeclaration, {
+      source: { value: 'backbone.radio' }
+    })
+    .forEach(path => {
+      j(path)
+        .replaceWith(j.importDeclaration([j.importSpecifier(j.identifier('Radio'))], j.stringLiteral('nextbone-radio')))
+    })
+}
+
 const backboneConfig = {
   moduleName: 'backbone',
   globalIdentifier: 'Backbone',
@@ -200,6 +211,8 @@ const marionetteRoutingConfig = {
 module.exports = function transformer(file, api) {
   const j = api.jscodeshift
   const root = j(file.source)
+
+  transformRadio(root, j)
 
   transformModule(backboneConfig, root, j)
   transformModule(marionetteRoutingConfig, root, j)

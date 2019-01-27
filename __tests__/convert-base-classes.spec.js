@@ -13,3 +13,4 @@ defineTest(__dirname, 'convert-base-classes', null, 'known-decorators-noimport')
 defineTest(__dirname, 'convert-base-classes', null, 'class-expression');
 defineTest(__dirname, 'convert-base-classes', null, 'class-fields');
 defineTest(__dirname, 'convert-base-classes', null, 'marionette-routing');
+defineTest(__dirname, 'convert-base-classes', null, 'radio');
