@@ -52,10 +52,11 @@ function createBaseClassName(config, baseClass) {
 }
 
 function buildClass(config, className, callExpression, baseClass, isExpression) {
-  const { knownClasses, knownDecorators, newModuleName, j, addedImports } = config
+  const { knownClasses, knownDecorators = [], newModuleName, j, addedImports } = config
   const decorators = []
   const body = []
   const classInfo = knownClasses[baseClass.name]
+  const renameMap = (classInfo && classInfo.rename) || {}
   if (callExpression.arguments.length) {
     const options = callExpression.arguments[0]
     options.properties.forEach(property => {
@@ -72,12 +73,12 @@ function buildClass(config, className, callExpression, baseClass, isExpression) 
 
       if (property.type === 'ObjectProperty') {
         if (property.value.type === 'FunctionExpression') {
-          body.push(j.classMethod('method', j.identifier(propName), property.value.params, property.value.body))
+          body.push(j.classMethod('method', j.identifier(renameMap[propName] || propName), property.value.params, property.value.body))
         } else {
-          body.push(j.classProperty(j.identifier(propName), property.value, null, classInfo && classInfo.static.indexOf(propName) !== -1))
+          body.push(j.classProperty(j.identifier(renameMap[propName] || propName), property.value, null, classInfo && classInfo.static.indexOf(propName) !== -1))
         }
       } else if (property.type === 'ObjectMethod') {
-        body.push(j.classMethod('method', j.identifier(propName), property.params, property.body))
+        body.push(j.classMethod('method', j.identifier(renameMap[propName] || propName), property.params, property.body))
       }
     })
   }
@@ -183,11 +184,25 @@ const backboneConfig = {
   newModuleName: 'nextbone'
 }
 
+const marionetteRoutingConfig = {
+  moduleName: 'marionette.routing',
+  knownClasses: {
+    Route: {
+      static: ['viewClass', 'contextRequests', 'contextEvents'],
+      rename: {
+        viewClass: 'component'
+      }
+    }
+  },  
+  newModuleName: 'nextbone-routing'
+}
+
 module.exports = function transformer(file, api) {
   const j = api.jscodeshift
   const root = j(file.source)
 
   transformModule(backboneConfig, root, j)
+  transformModule(marionetteRoutingConfig, root, j)
 
   return root.toSource()
 }
