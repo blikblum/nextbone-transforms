@@ -1,5 +1,12 @@
-const getPath = require('lodash/get')
-const each = require('lodash/each')
+const getPath = (obj, path) => {
+  let result = obj
+  const keys = path.split('.')
+  for (let i = 0; i < keys.length; i++) {
+    result = result[keys[i]]
+    if (!result) break
+  }
+  return result
+}
 
 function transformImport(config, root) {
   const { knownClasses, moduleName, newModuleName, j } = config
@@ -158,7 +165,7 @@ function transformModule(moduleConfig, root, j) {
             importAddIndex = index + 1
           }
         })
-        each(addedImports, (value) => {
+        Object.values(addedImports).forEach(value => {
           path.value.body.splice(importAddIndex, 0, value)
           importAddIndex++
         })
