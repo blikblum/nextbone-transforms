@@ -206,7 +206,7 @@ const marionetteRoutingConfig = {
   moduleName: 'marionette.routing',
   knownClasses: {
     Route: {
-      static: ['viewClass', 'contextRequests', 'contextEvents'],
+      static: ['viewClass', 'contextRequests', 'contextEvents', 'childRoutes'],
       rename: {
         viewClass: 'component'
       }

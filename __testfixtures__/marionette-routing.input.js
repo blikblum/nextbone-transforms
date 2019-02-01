@@ -15,6 +15,10 @@ export default Route.extend({
     }
   },
 
+  childRoutes: {
+    child: 'test'
+  },
+
   contextRequests: {
     contacts: function () {
       return this.contacts

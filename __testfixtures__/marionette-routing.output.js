@@ -15,6 +15,10 @@ export default class extends Route {
     }
   }
 
+  static childRoutes = {
+    child: 'test'
+  };
+
   static contextRequests = {
     contacts: function () {
       return this.contacts
