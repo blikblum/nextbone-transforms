@@ -45,6 +45,18 @@ function transformImport(config, root) {
       j(path)
         .find(j.StringLiteral, { value: moduleName })
         .replaceWith(j.stringLiteral(newModuleName))
+
+
+      // rename imported class
+      Object.keys(config.rename || {}).forEach((className) => {
+        j(path)
+         .find(j.Identifier, { name: className })
+         .forEach(identifierPath => {
+            if (identifierPath.name === 'imported') {
+              j(identifierPath).replaceWith(j.identifier(config.rename[className]))
+            }
+         })                
+      })      
     })
 
   return [defaultIdentifier, baseClasses]
@@ -52,10 +64,11 @@ function transformImport(config, root) {
 
 function createBaseClassName(config, baseClass) {
   const j = config.j
+  const identifier = (config.rename && config.rename[baseClass.name]) || baseClass.identifier
   if (baseClass.namespace) {
-    return j.memberExpression(j.identifier(baseClass.namespace), j.identifier(baseClass.identifier))
+    return j.memberExpression(j.identifier(baseClass.namespace), j.identifier(identifier))
   }
-  return j.identifier(baseClass.identifier)
+  return j.identifier(identifier)
 }
 
 function buildClass(config, className, callExpression, baseClass, isExpression) {
@@ -215,6 +228,22 @@ const marionetteRoutingConfig = {
   newModuleName: 'nextbone-routing'
 }
 
+const marionetteViewConfig = {
+  moduleName: 'backbone.marionette',
+  knownClasses: {
+    View: {
+      static: [],
+      rename: {        
+        template: 'render'
+      }
+    }
+  },
+  rename: {
+    View: 'Component'
+  },
+  newModuleName: 'component'
+}
+
 module.exports = function transformer(file, api) {
   const j = api.jscodeshift
   const root = j(file.source)
@@ -223,6 +252,7 @@ module.exports = function transformer(file, api) {
 
   transformModule(backboneConfig, root, j)
   transformModule(marionetteRoutingConfig, root, j)
+  transformModule(marionetteViewConfig, root, j)
 
   return root.toSource()
 }
