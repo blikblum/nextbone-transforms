@@ -33,9 +33,12 @@ function transformImport(config, root) {
       source: { value: moduleName }
     })
     .forEach(path => {
+      let hasDefaultSpecifier = false
       path.value.specifiers.forEach(specifier => {
         switch (specifier.type) {
-          case 'ImportDefaultSpecifier', 'ImportNamespaceSpecifier':
+          case 'ImportDefaultSpecifier':
+            hasDefaultSpecifier = true
+          case 'ImportNamespaceSpecifier':
             defaultIdentifier = specifier.local.name;
             break;
           
@@ -46,9 +49,18 @@ function transformImport(config, root) {
             break;
         }
       })
+
+      // rename module
       j(path)
         .find(j.StringLiteral, { value: moduleName })
         .replaceWith(j.stringLiteral(newModuleName))
+      
+      // transform default specifier in namespace
+      if (hasDefaultSpecifier) {
+        j(path)
+         .find(j.ImportDefaultSpecifier)
+         .replaceWith(j.importNamespaceSpecifier(j.identifier(defaultIdentifier)))                  
+      }      
 
 
       // rename imported class

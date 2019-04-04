@@ -1,4 +1,4 @@
-import Backbone from "nextbone"
+import * as Backbone from "nextbone";
 
 import { validation } from "nextbone/validation";
 import { computed } from "nextbone/computed";
