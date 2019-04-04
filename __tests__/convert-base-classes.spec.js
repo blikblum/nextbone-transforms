@@ -16,3 +16,4 @@ defineTest(__dirname, 'convert-base-classes', null, 'marionette-routing');
 defineTest(__dirname, 'convert-base-classes', null, 'radio');
 
 defineTest(__dirname, 'convert-base-classes', null, 'mn-view-import-named');
+defineTest(__dirname, 'convert-base-classes', null, 'mn-import-all');

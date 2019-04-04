@@ -34,12 +34,16 @@ function transformImport(config, root) {
     })
     .forEach(path => {
       path.value.specifiers.forEach(specifier => {
-        if (specifier.type === 'ImportDefaultSpecifier') {
-          defaultIdentifier = specifier.local.name
-        } else {
-          if (specifier.imported.name in knownClasses) {
-            baseClasses.push({ identifier: specifier.local.name, name: specifier.imported.name })
-          }
+        switch (specifier.type) {
+          case 'ImportDefaultSpecifier', 'ImportNamespaceSpecifier':
+            defaultIdentifier = specifier.local.name;
+            break;
+          
+          case 'ImportSpecifier':
+            if (specifier.imported.name in knownClasses) {
+              baseClasses.push({ identifier: specifier.local.name, name: specifier.imported.name })
+            }
+            break;
         }
       })
       j(path)
